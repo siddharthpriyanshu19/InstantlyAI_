@@ -1,4 +1,5 @@
 import argparse
+import json
 from llm import LLMClient
 from company_research import get_official_website, crawl_company_site
 from email_generator import generate_email
@@ -115,6 +116,20 @@ def main():
 
     print("\nFinal Email:\n")
     print(email)
+
+
+    # 👇 SUBJECT create
+    subject = f"Idea for {args.company_name}'s marketing strategy"
+
+    # 👇 JSON OUTPUT for Node worker
+    output = {
+        "subject": subject,
+        "body": email
+    }
+
+    print(json.dumps(output))
+
+
 
 
 if __name__ == "__main__":

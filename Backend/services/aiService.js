@@ -7,54 +7,71 @@ function generateEmail(lead, campaign) {
 
     const scriptPath = path.join(
       __dirname,
-      "./email_generation/main.py"
+      "../../email_generation/main.py"
     );
 
-    const python = spawn("python3", [
+    console.log("Python script path:", scriptPath);
 
+    const python = spawn("python", [
       scriptPath,
 
-      "--first_name", lead.first_name,
-      "--job_title", lead.job_title || "Marketing Lead",
-      "--company_name", lead.company,
+      "--first_name",
+      (lead.Name || lead.first_name || "").split(" ")[0],
+
+      "--job_title",
+      lead.job_title || "Marketing Lead",
+
+      "--company_name",
+      lead.company || "",
 
       "--seller_company_description",
-      campaign.seller_company_description,
+      campaign.seller_company_description || "",
 
       "--product_description",
-      campaign.product_description,
+      campaign.product_description || "",
 
       "--seller_website",
-      campaign.seller_website
-
+      campaign.seller_website || ""
     ]);
 
     let data = "";
     let error = "";
 
-    python.stdout.on("data", chunk => {
+    python.stdout.on("data", (chunk) => {
       data += chunk.toString();
     });
 
-    python.stderr.on("data", chunk => {
+    python.stderr.on("data", (chunk) => {
       error += chunk.toString();
     });
 
-    python.on("close", () => {
+    python.on("error", (err) => {
+      reject("Failed to start python process: " + err.message);
+    });
 
-      if (error) {
-        return reject(error);
+    python.on("close", (code) => {
+
+      if (code !== 0) {
+        return reject("Python exited with code " + code + " : " + error);
       }
 
       try {
 
-        const parsed = JSON.parse(data);
+        const jsonStart = data.lastIndexOf("{");
+
+        if (jsonStart === -1) {
+          return reject("No JSON found in python output:\n" + data);
+        }
+
+        const jsonString = data.slice(jsonStart);
+
+        const parsed = JSON.parse(jsonString);
 
         resolve(parsed);
 
-      } catch {
+      } catch (err) {
 
-        reject("Failed to parse python output");
+        reject("Failed to parse python output:\n" + data);
 
       }
 

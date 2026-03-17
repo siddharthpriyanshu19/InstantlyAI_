@@ -1,9 +1,12 @@
 const express = require("express");
 const cors = require("cors");
+require("./queue/worker");
 
 const leadRoutes = require("./routes/leadRoutes");
 const campaignRoutes = require("./routes/campaignRoutes");
 const emailRoutes = require("./routes/emailRoutes");
+
+
 
 const app = express();
 

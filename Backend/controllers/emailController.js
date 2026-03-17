@@ -1,13 +1,25 @@
-const { generateEmail } = require("../services/aiService");
+const fs = require("fs");
 const emailQueue = require("../queue/emailQueue");
 
 exports.sendCampaignEmails = async (req, res) => {
 
-  const { leads, campaign } = req.body;
+  const { campaign } = req.body;
+
+  if (!fs.existsSync("leads.json")) {
+    return res.status(400).json({
+      error: "No leads uploaded"
+    });
+  }
+
+  const leads = JSON.parse(fs.readFileSync("leads.json"));
+
+  console.log("Leads loaded:", leads.length);
 
   for (const lead of leads) {
 
-    await emailQueue.add("send-email", {
+    console.log("Adding job for:", lead);
+
+    await emailQueue.add("sendEmail", {
       lead,
       campaign
     });
@@ -15,7 +27,8 @@ exports.sendCampaignEmails = async (req, res) => {
   }
 
   res.json({
-    message: "Emails added to queue"
+    message: "Campaign queued",
+    total: leads.length
   });
 
 };
